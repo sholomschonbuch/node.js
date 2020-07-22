@@ -2,6 +2,8 @@ const express = require("express")
 const app = express()
 const path = require("path")
 const hbs = require("hbs")
+const geocode = require("./utils/geocode")
+const forecast = require("./utils/forecast")
 
 app.use(express.static(path.join(__dirname, "../public")))
 const viewsPath = path.join(__dirname, "../templates/views")
@@ -19,10 +21,40 @@ app.get("", (req, res) => {
     })
 })
 app.get("/weather", (req, res) => {
-    res.send({
-        temp: 96,
-        loc: "ny"
+    if (!req.query.address) {
+        return res.send({
+            error: "plz use address"
+        })
+    }
+    geocode(req.query.address, (error, {latitude, longitude, location}) => {
+        if (error) {
+            return res.send({
+                error: "error does not work!"
+            })
+        }
+        forecast(latitude, longitude,(error, response) => {
+            console.log(longitude, latitude)
+            if (error) {
+                return res.send({
+                    error: "we dont know"
+                })
+            }
+            return res.send({
+                forcast: response,
+                address: req.query.address,
+                location: location
+            })
+        })
     })
+})
+app.get("/test", (req, res) => {
+    if (req.query.temp){
+        return res.send(req.query.temp)
+
+    }
+    res.send("error!")
+    
+    
 })
 app.get("/about", (req, res) => {
     res.render("about", {
